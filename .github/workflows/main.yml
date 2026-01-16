@@ -1,0 +1,63 @@
+name: Deploy App to Hostinger
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+    - main
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP Action
+        uses: shivammathur/setup-php@2.33.0
+        with:
+          php-version: '8.4'
+      - name: Install composer Dependencies
+        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+      - name: Build
+        run: |
+          npm ci
+          npm run build --if-present
+      - name: Deploy PHP to Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_KEY }}
+      - name: Install SSH key
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -t rsa -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+      - name: Copy Build Files to Target Server
+        run: |
+          rsync -az \
+            --exclude='.env' \
+            --exclude='node_modules' \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='*.log' \
+            --exclude='tests' \
+            --exclude='test' \
+            --exclude='coverage' \
+            --exclude='*.md' \
+            --exclude='docs' \
+            --exclude='Dockerfile' \
+            --exclude='docker-compose.*' \
+            --exclude='.vscode' \
+            --exclude='.idea' \
+            --exclude='*.zip' \
+            --exclude='*.tar.gz' \
+            --exclude='.DS_Store' \
+            -e "ssh -p ${{ secrets.SSH_PORT }}" \
+            ${{ github.workspace }}/ \
+            ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:~/${{ secrets.HOSTINGER_DEPLOY_DIR }}/
