@@ -91,6 +91,21 @@ export default function Profile({
                                     />
                                 </div>
 
+                                <div className="grid gap-2">
+                                    <Label htmlFor="role">Role</Label>
+
+                                    <Input
+                                        id="role"
+                                        type="text"
+                                        className="mt-1 block w-full"
+                                        defaultValue={auth.user.role}
+                                        name="role"
+                                        required
+                                        placeholder="Ops, Admin, etc."
+                                        disabled
+                                    />
+                                </div>
+
                                 {mustVerifyEmail &&
                                     auth.user.email_verified_at === null && (
                                         <div>

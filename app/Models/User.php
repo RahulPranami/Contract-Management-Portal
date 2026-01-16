@@ -49,4 +49,15 @@ class User extends Authenticatable
             'two_factor_confirmed_at' => 'datetime',
         ];
     }
+    
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isOps()
+    {
+        return $this->role === 'ops';
+    }
+
 }
